@@ -190,7 +190,7 @@ with col2 :
 Opened_day = df.groupby("Day Of Week")["Date"].nunique().reset_index(name= 'Day')
 
 sum_sales = df[["Category","Day Of Week","Price"]]\
-            .groupby("Day Of Week")["Price"]\
+            .groupby(["Day Of Week",'Category'])["Price"]\
             .agg(["sum",'count'])\
             .rename(columns={'sum':'Total Sales','count':'Total Quantity'})\
             .round().reset_index()
@@ -209,26 +209,31 @@ sales_data["Day Of Week"] = pd.Categorical(sales_data["Day Of Week"],
                                             ordered=True)
 
 sales_data.sort_values("Day Of Week", inplace=True)
+sales_data = sales_data.reset_index().drop(columns= 'index')
 
 # Create Chart 5
 chart5 = go.Figure()
 
-# Add bar chart
-chart5.add_trace(go.Bar(x=sales_data['Day Of Week'], 
-                        y=sales_data['Avg Quantity'], 
-                        name='Average Sales', 
-                        yaxis='y',
-                        text= sales_data['Avg Quantity']))
+for category in sales_data['Category'].unique():
+    subset = sales_data[sales_data['Category'] == category]
+    
+    # Add bar chart
+    chart5.add_trace(go.Bar(x=subset['Day Of Week'],
+                            y=subset['Avg Quantity'],
+                            name=category,
+                            text=subset['Avg Quantity'],
+                            marker=dict(color=subset['Category'].map({'food': '#FDC060', 'drink': '#497AF6'}))))
 
-# Update layout
-chart5.update_layout(title='Average Orders by Day', 
-                     xaxis_title='', 
-                     yaxis_title='Sales',
-                     yaxis=dict(showgrid=False),
-                     legend=dict(x=1.05, 
-                                 y=1.0, 
-                                 xanchor='left', 
-                                 yanchor='top'))
+    # Setting layout
+    chart5.update_layout(title='Average Orders by Day',
+                         xaxis_title='',
+                         yaxis_title='Orders',
+                         yaxis=dict(showgrid=False),
+                         barmode = 'stack',
+                         legend=dict(x=1.05,
+                                     y=1.0,
+                                     xanchor='left',
+                                     yanchor='top'))
 
 with col1 :
      st.plotly_chart(chart5, use_container_width= True)
@@ -236,8 +241,8 @@ with col1 :
 # Chart 6
 Opened_Day = df["Date"].nunique()
 
-time_orders = df[["Order Hour","Price"]]\
-                .groupby("Order Hour")['Price']\
+time_orders = df[["Category","Order Hour","Price"]]\
+                .groupby(["Order Hour","Category"])['Price']\
                 .agg(["sum",'count'])\
                 .rename(columns= {'sum':'Total Sales','count':'Total Quantity'})\
                 .sort_values(by = 'Order Hour')\
@@ -251,23 +256,28 @@ time_orders["Avg Sales"] = (time_orders["Total Sales"]/Opened_Day).round(decimal
 # Create Chart 6
 chart6 = go.Figure()
 
-# Add bar chart
-chart6.add_trace(go.Bar(x=time_orders['Order Hour'], 
-                        y=time_orders['Avg Quantity'], 
-                        name='Average Sales', 
-                        yaxis='y', 
-                        text= time_orders['Avg Quantity']))
-
-# Update layout
-chart6.update_layout(title='Average Orders by Time', 
-                    xaxis_title='Time', 
-                    yaxis_title='Sales',
-                    yaxis=dict(showgrid=False, 
-                               range = [0,max(time_orders['Avg Quantity'])+5]),
-                    legend=dict(x=1.05, 
-                                y=1.0, 
-                                xanchor='left', 
-                                yanchor='top'))
+for category in time_orders['Category'].unique():
+     subset = time_orders[time_orders['Category'] == category]
+     
+     # Add bar chart
+     chart6.add_trace(go.Bar(x=subset['Order Hour'], 
+                             y=subset['Avg Quantity'], 
+                             name=category,
+                             yaxis='y',
+                             text= subset['Avg Quantity'],
+                             marker=dict(color=subset['Category'].map({'food': '#FDC060', 'drink': '#497AF6'}))))
+     
+     # Setting layout
+     chart6.update_layout(title='Average Orders by Time',
+                          xaxis_title='Time',
+                          yaxis_title='Orders',
+                          barmode = 'stack',
+                          yaxis=dict(showgrid=False,
+                                     range = [0,max(time_orders['Avg Quantity'])*2]),
+                                     legend=dict(x=1.05,
+                                                 y=1.0,
+                                                 xanchor='left',
+                                                 yanchor='top'))
 
 with col2: 
      st.plotly_chart(chart6, use_container_width= True)
@@ -285,7 +295,6 @@ df_kstaff["Day Of Week"] = pd.Categorical(df_kstaff["Day Of Week"],categories=da
 df_kstaff.sort_values("Day Of Week", inplace=True)
 df_kstaff = df_kstaff.reset_index().drop(columns= 'index')
 
-# Create Chart 7
 # Create Chart 7
 chart7 = go.Figure()
 
